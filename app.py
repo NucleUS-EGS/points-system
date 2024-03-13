@@ -1,33 +1,38 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
+from flask_restful import Resource, Api
+from flask_swagger_ui import get_swaggerui_blueprint
+import json
 
 app = Flask(__name__)
+api = Api(app)
 
-@app.route('/')
-def home():
-    return "Home"
 
-@app.route('/points/standings', methods=['GET'])
-def get_standing_points():
-    data = {} 
-    return jsonify(data)
+class HelloWorld(Resource):
+    def get(self):
+        return jsonify({'message': 'Hello, World!'})
 
-@app.route('/points/entity', methods=['PATCH'])
-def update_points():
-    new_type = request.json
-    return jsonify(new_type), 201
-def remove_points():
-    new_type = request.json
-    return jsonify(new_type), 201
+# Add the resource to the API
+api.add_resource(HelloWorld, '/hello')
 
-@app.route('/points/type', methods=['DELETE'])
-def remove_type():
-    new_type = request.json
-    return jsonify(new_type), 201
 
-@app.route('/points/type', methods=['POST'])
-def add_new_type():
-    new_type = request.json
-    return jsonify(new_type), 201
+# Configure Swagger UI
+SWAGGER_URL = '/swagger'
+API_URL = 'http://127.0.0.1:5000/swagger.json'
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "Sample API"
+    }
+)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+@app.route('/swagger.json')
+def swagger():
+    with open('swagger.json', 'r') as f:
+        return jsonify(json.load(f))
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
