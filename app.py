@@ -1,38 +1,65 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, Response
 from flask_restful import Resource, Api
-from flask_swagger_ui import get_swaggerui_blueprint
+import mysql.connector
 import json
 
 app = Flask(__name__)
 api = Api(app)
 
+# Database configuration
+db_config = {
+    'host': 'localhost',
+    'port': 3306,
+    'user': 'root',
+    'password': 'EGS2324pass!',
+    'database': 'POINTS'
+}
 
-class HelloWorld(Resource):
+def get_db_connection():
+    conn = mysql.connector.connect(**db_config)
+    return conn
+
+class Entity(Resource):
+
     def get(self):
-        return jsonify({'message': 'Hello, World!'})
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM ENTITY"
+        
+        try:
+            print("gatinho")
+            cursor.execute(query)
+            result = cursor.fetchall()
+            #print(result)
+            return jsonify(result)
+        except mysql.connector.Error as err:
+            print("Something went wrong: {}".format(err))
+            return Response("Failed to get entities", status=500, mimetype='application/json')
+        finally:
+            cursor.close()
+            conn.close()
 
-# Add the resource to the API
-api.add_resource(HelloWorld, '/hello')
+    def post(self):
+        data = request.get_json()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "INSERT INTO ENTITY (ID, POINTS) VALUES (%s, %s)"
+        values = (data['ID'], data['POINTS'])
+        
+        try:
+            cursor.execute(query, values)
+            conn.commit()
+            return Response("Entity added", status=201, mimetype='application/json')
+        except mysql.connector.Error as err:
+            print("Something went wrong: {}".format(err))
+            return Response("Failed to add entity", status=500, mimetype='application/json')
+        finally:
+            cursor.close()
+            conn.close()
 
-
-# Configure Swagger UI
-SWAGGER_URL = '/swagger'
-API_URL = 'http://127.0.0.1:5000/swagger.json'
-swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
-    config={
-        'app_name': "Sample API"
-    }
-)
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
-
-@app.route('/swagger.json')
-def swagger():
-    with open('swagger.json', 'r') as f:
-        return jsonify(json.load(f))
-
-
+api.add_resource(Entity, '/entity')
 
 if __name__ == '__main__':
     app.run(debug=True)
