@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-      "title": "Sample API",
-      "description": "A sample API that demonstrates how to use Flask-SwaggerUI.",
+      "title": "POINTS SYSTEM API",
+      "description": "A API that helps manage a points system.",
       "version": "1.0"
     },
     "basePath": "/api",
@@ -16,9 +16,9 @@
       "application/json"
     ],
     "paths": {
-      "/hello": {
+      "/entity": {
         "get": {
-          "summary": "Returns a simple greeting message.",
+          "summary": "Returns all entities available in database.",
           "produces": [
             "application/json"
           ],
@@ -28,7 +28,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "message": {
+                  "entity_id": {
                     "type": "string"
                   }
                 }
