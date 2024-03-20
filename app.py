@@ -267,5 +267,16 @@ if __name__ == '__main__':
 
 
 # TODO
-# trigger para atualizar a tabela ENTITYPOINTS com o ID quando um novo TIPO ou ENTITY são adicionados
-# função que soma os pontos/tira
+# trigger para atualizar a tabela ENTITYPOINTS com o ID quando um novo TIPO ou ENTITY são adicionados DONE
+# função que soma os pontos/tira os pontos         DONE
+# PATCH /points/entity/<entity_id> - Add or remove points to an entity      NOT DONE (GET AND POST ENTITIES ARE DONE) 
+# GET /points/entity/<entity_id>/history - History of points transactions   HALF DONE (NEEDS OBJECT ID)
+# POST /points/type - Add a new points type        DONE
+# DELETE /points/type - Remove type of points      DONE
+# GET /points/standings - Get general standings of all entities  DONE
+# GET /points/standings?type=<points_type> - Get standings of a points type  DONE (??)
+
+# NOT FORGET
+# object -> evento
+# entity -> pessoa
+# type -> nucleo

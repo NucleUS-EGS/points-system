@@ -25,14 +25,167 @@
           "responses": {
             "200": {
               "description": "Successful response.",
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "entity_id": {
-                    "type": "string"
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "entity_id": {
+                        "type": "string",
+                        "description": "ID of the entity."
+                      },
+                      "points": {
+                        "type": "integer",
+                        "description": "The points associated with the entity."
+                      }
+                    }
                   }
                 }
-              }
+            }
+          }
+        },
+        "post": {
+          "summary": "Adds new entities and points.",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful response.",
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "entity_id": {
+                        "type": "string",
+                        "description": "ID of the entity."
+                      },
+                      "points": {
+                        "type": "integer",
+                        "description": "The points associated with the entity."
+                      }
+                    }
+                  }
+                }
+            }
+          }
+        }
+      },
+      "/entity/<entity_id>": {
+        "get": {
+          "summary": "Returns all entries of that entity.",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful response.",
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "entity_id": {
+                        "type": "string",
+                        "description": "ID of the entity."
+                      },
+                      "points": {
+                        "type": "integer",
+                        "description": "The points associated with the entity."
+                      }
+                    }
+                  }
+                }
+            }
+          }
+        }
+      },
+      "/entity/<entity_id>/history": {
+        "get": {
+          "summary": "Returns all points transactions per entity.",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful response.",
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ACTION": {
+                        "type": "integer",
+                        "description": "The action that was performed, if points were added or removed."
+                      },
+                      "ENTITY_ID": {
+                        "type": "varchar",
+                        "description": "The entity in which the action was performed."
+                      },
+                      "timestamp": {
+                        "type": "timestamp",
+                        "description": "Action in real time."
+                      }
+                    }
+                  }
+                }
+            }
+          }
+        }
+      },
+      "/type": {
+        "post": {
+          "summary": "Adds a new type of points",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful response.",
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ACTION": {
+                        "type": "varchar",
+                        "description": "The action that was performed, if points were added or removed."
+                      },
+                      "ENTITY_ID": {
+                        "type": "varchar",
+                        "description": "The entity in which the action was performed."
+                      }
+                    }
+                  }
+                }
+            }
+          }
+        },
+        "delete": {
+          "summary": "Deletes a type of points",
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful response.",
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ID": {
+                        "type": "varchar",
+                        "description": "The ID of the type."
+                      },
+                      "TIPO": {
+                        "type": "varchar",
+                        "description": "The type it self"
+                      }
+                    }
+                  }
+                }
             }
           }
         }
