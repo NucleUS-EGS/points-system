@@ -1,19 +1,26 @@
 from flask import Flask, jsonify, request, Response
 from flask_restful import Resource, Api
 from flask_swagger_ui import get_swaggerui_blueprint
+from dotenv import load_dotenv
 import json
 import mysql.connector
+import os
+from sqlalchemy import create_engine
 
 app = Flask(__name__)
 api = Api(app)
 
+
+load_dotenv()
+
 # db configuration
+
 db_config = {
-    'host': 'localhost',
-    'port': 3306,
-    'user': 'root',
-    'password': 'EGS2324pass!',
-    'database': 'POINTS'
+    'host': os.environ.get("HOST"),
+    'port': os.environ.get("PORT"),
+    'user': os.environ.get("USER_NAME"),
+    'password': os.environ.get("PASSWORD"),
+    'database': os.environ.get('DATABASE')
 }
 
 def get_db_connection():
@@ -94,33 +101,6 @@ class Entity(Resource):
 
     #     query = "SELECT * FROM HISTORY"
                 
-
-# class AddSubPoints(Resource):
-
-#     def put(self, entity_id):
-#         data = request.get_json()
-#         points = data.get('points')
-#         if points is None:
-#             return Response("{'error': 'Points value is required'}", status=400, mimetype='application/json')
-
-#         conn = get_db_connection()
-#         cursor = conn.cursor()
-
-#         query = "UPDATE ENTITY SET POINTS = POINTS + %s WHERE ID = %s;"
-#         values = (points, entity_id)
-
-#         try:
-#             cursor.execute(query, values)
-#             conn.commit()
-#             return Response("{'message': 'Points updated successfully'}", status=200, mimetype='application/json')
-#         except mysql.connector.Error as err:
-#             print("Something went wrong: {}".format(err))
-#             return Response("{'error': 'Failed to update points'}", status=500, mimetype='application/json')
-#         finally:
-#             cursor.close()
-#             conn.close()
-
-
 class EntityHistory(Resource):
     def get(self, entity_id):
         conn = get_db_connection()
@@ -232,19 +212,17 @@ class Standings(Resource):
 
 
 # api.add_resource(Entity, '/entity')
-api.add_resource(Entity, '/entity', endpoint='all_entities')  
-api.add_resource(Entity, '/entity/<entity_id>', endpoint='specific_entity')  
-api.add_resource(EntityHistory, '/entity/<entity_id>/history', endpoint='entity_history')
-api.add_resource(Type, '/type')
-api.add_resource(Standings, '/standings', endpoint='standings')
-api.add_resource(Standings, '/standings/<points_type>', endpoint='standings_type')  
-
-
+api.add_resource(Entity, '/v1/entity', endpoint='all_entities')  
+api.add_resource(Entity, '/v1/entity/<entity_id>', endpoint='specific_entity')  
+api.add_resource(EntityHistory, '/v1/entity/<entity_id>/history', endpoint='entity_history')
+api.add_resource(Type, '/v1/type')
+api.add_resource(Standings, '/v1/standings', endpoint='standings')
+api.add_resource(Standings, '/v1/standings/<points_type>', endpoint='standings_type')  
 
 
 # SWAGGER CONF
 
-SWAGGER_URL = '/swagger'
+SWAGGER_URL = '/swagger/v1'
 API_URL = 'http://127.0.0.1:5000/swagger.json'
 swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,
@@ -274,8 +252,8 @@ if __name__ == '__main__':
 # POST /points/type - Add a new points type        DONE
 # DELETE /points/type - Remove type of points      DONE
 # GET /points/standings - Get general standings of all entities  DONE
-# GET /points/standings?type=<points_type> - Get standings of a points type  DONE (??)
-
+# GET /points/standings?type=<points_type> - Get standings of a points type  DONE (??) /standidngs/type query
+# versão api
 # NOT FORGET
 # object -> evento
 # entity -> pessoa
