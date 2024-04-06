@@ -1,11 +1,11 @@
 from flask import Flask, jsonify, request, Response
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api,  reqparse
 from flask_swagger_ui import get_swaggerui_blueprint
 from dotenv import load_dotenv
 import json
 import mysql.connector
+from mysql.connector import Error
 import os
-from sqlalchemy import create_engine
 
 app = Flask(__name__)
 api = Api(app)
@@ -29,46 +29,33 @@ def get_db_connection():
 
 class Entity(Resource):
 
-    # GET /points/entity - Get all entities
-    # POST /points/entity - Add a new entity
+    # GET /points/entity?id=entity_id - Get all entities or by type
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('id', type=int, store_missing=False, location='args') 
+        args = parser.parse_args()
+        entity_id = args.get('id')
 
-    def get(self, entity_id=None):
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)  # Use dictionary=True for more accessible result handling
 
-        if entity_id:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            query = "SELECT * FROM ENTITY WHERE ID = %s"
-            values = (entity_id,)
-            
-            try:
-                cursor.execute(query, values)
-                result = cursor.fetchall()
-                return jsonify(result)
-            except mysql.connector.Error as err:
-                print("Something went wrong: {}".format(err))
-                return Response("Failed to get entity", status=500, mimetype='application/json')
-            finally:
-                cursor.close()
-                conn.close()
-
-        else:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            query = "SELECT * FROM ENTITY"
-            
-            try:
+        try:
+            if entity_id is not None:
+                query = "SELECT * FROM ENTITY WHERE ID = %s"
+                cursor.execute(query, (entity_id,))
+            else:
+                query = "SELECT * FROM ENTITY"
                 cursor.execute(query)
-                result = cursor.fetchall()
-                return jsonify(result)
-            except mysql.connector.Error as err:
-                print("Something went wrong: {}".format(err))
-                return Response("Failed to get entities", status=500, mimetype='application/json')
-            finally:
-                cursor.close()
-                conn.close()
 
+            result = cursor.fetchall()
+            return jsonify(result)
+        except Error as err:
+            return {"error": str(err)}, 500
+        finally:
+            cursor.close()
+            conn.close()
+
+    # POST /points/entity - Add a new entity
     def post(self):
         data = request.get_json()
         conn = get_db_connection()
@@ -88,48 +75,82 @@ class Entity(Resource):
             cursor.close()
             conn.close()
 
-    # def get_history(self):
-    #     # history of points of an entity
-    #     # if + 10 add 10 points -> trigger that adds 10 points
-    #     # if - 10 remove 10 points -> trigger that removes 10 points
+    # PATCH /points/entity/<entity_id> - Add or remove points to an entity  
+    def patch(self, entity_id):
+        data = request.get_json(force=True)  
+        if 'points' not in data:
+            return {'message': 'Points value is required'}, 400  
+        points_to_update = data['points']
 
-    #     conn = get_db_connection()
-    #     cursor = conn.cursor()
-        
-    #     # pessoa adiciona pontos a um id
-    #     # trigger para somar e diminuir pontos
-
-    #     query = "SELECT * FROM HISTORY"
-                
-class EntityHistory(Resource):
-    def get(self, entity_id):
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        
-        query = "SELECT * FROM HISTORY WHERE ENTITY_ID = %s ORDER BY timestamp DESC"
-        values = (entity_id,)
-        
+        cursor = conn.cursor()
+
+        query = "UPDATE ENTITY SET POINTS = POINTS + %s WHERE ID = %s"
+        values = (points_to_update, entity_id)
+
         try:
             cursor.execute(query, values)
-            history = cursor.fetchall()
-            if history:
-                return jsonify(history)
-            else:
-                return jsonify({"message": "No history found for the given entity ID."})
-        except mysql.connector.Error as e:
-            return {"error": str(e)}, 500
+            conn.commit()
+            if cursor.rowcount == 0:
+                return {'message': 'Entity not found'}, 404 
+            return {'message': 'Entity updated successfully'}, 200
+        except mysql.connector.Error as err:
+            return {'error': str(err)}, 500
         finally:
             cursor.close()
             conn.close()
-    
 
+class EntityPoints(Resource):
+    def post(self, entity_id):
+        data = request.get_json()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "INSERT INTO ENTITYPOINTS (ENTITY_ID, _ID, DONE) VALUES (%s, %s, %s)"
+        values = (entity_id, data['OBJECT_ID'], data['DONE'])
+        
+        try:
+            cursor.execute(query, values)
+            conn.commit()
+            return Response("Object associated to entity", status=201, mimetype='application/json')
+        except mysql.connector.Error as err:
+            print("Something went wrong: {}".format(err))
+            return Response("Failed to associate object to entity", status=500, mimetype='application/json')
+        finally:
+            cursor.close()
+            conn.close()
+
+
+
+
+# POST /points/entity/<entity_id>/object - Associate an object to an entity
+
+# by searching for that entity id, we can see what objects are associated
+# «a pessoa de id <entity_id> fez o evento de id object
+class EntityObject(Resource):
+    def post(self, entity_id):
+        data = request.get_json()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "INSERT INTO ENTITYOBJECTS (ENTITY_ID, OBJECT_ID, DONE) VALUES (%s, %s, %s)"
+        values = (entity_id, data['OBJECT_ID'], data['DONE'])
+        
+        try:
+            cursor.execute(query, values)
+            conn.commit()
+            return Response("Object associated to entity", status=201, mimetype='application/json')
+        except mysql.connector.Error as err:
+            print("Something went wrong: {}".format(err))
+            return Response("Failed to associate object to entity", status=500, mimetype='application/json')
+        finally:
+            cursor.close()
+            conn.close()
 
 
 class Type(Resource):
 
     # POST /points/type - Add a new points type
-    # DELETE /points/type - Remove type of points
-
     def post(self):
         data = request.get_json()
         conn = get_db_connection()
@@ -150,6 +171,7 @@ class Type(Resource):
             cursor.close()
             conn.close()
 
+    # DELETE /points/type - Remove a points type
     def delete(self):
         data = request.get_json()
         conn = get_db_connection()
@@ -170,54 +192,101 @@ class Type(Resource):
             conn.close()
 
 
-    # podemos ter dois gets dentro de uma mesma class? 
 class Standings(Resource):
 
-    def get(self, points_type = None):
-        if points_type:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            query = "SELECT * FROM ENTITYPOINTS WHERE TIPO_ID = %s ORDER BY POINTS DESC"
-            values = (points_type,)
-            
-            try:
-                cursor.execute(query, values)
-                result = cursor.fetchall()
-                return jsonify(result)
-            except mysql.connector.Error as err:
-                print("Something went wrong: {}".format(err))
-                return Response("Failed to get standings", status=500, mimetype='application/json')
-            finally:
-                cursor.close()
-                conn.close()
+    # GET /points/standings - Get general standings of all entities
+    # GET /points/standings?type=<points_type> - Get standings of a points type
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('type', type=int, store_missing=False, location='args')  # Using 'points_type' for external clarity
+        args = parser.parse_args()
+        points_type = args.get('type')
 
-        else:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            query = "SELECT * FROM ENTITYPOINTS ORDER BY POINTS DESC"
-            
-            try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)  # Use dictionary=True for more accessible result handling
+
+        try:
+            if points_type is not None:
+                query = "SELECT * FROM ENTITYPOINTS WHERE TIPO_ID = %s ORDER BY POINTS DESC"
+                cursor.execute(query, (points_type,))
+            else:
+                query = "SELECT * FROM ENTITYPOINTS ORDER BY POINTS DESC"
                 cursor.execute(query)
-                result = cursor.fetchall()
-                return jsonify(result)
-            except mysql.connector.Error as err:
-                print("Something went wrong: {}".format(err))
-                return Response("Failed to get standings", status=500, mimetype='application/json')
-            finally:
-                cursor.close()
-                conn.close()
+
+            result = cursor.fetchall()
+            return jsonify(result)
+        except Error as err:
+            return {"error": str(err)}, 500
+        finally:
+            cursor.close()
+            conn.close()
+
+
+
+class Object(Resource):
+
+    # POST /points/object - Create a new object that has a fixed amount of points associated
+    def post(self):
+        data = request.get_json()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "INSERT INTO OBJECTS (ID, POINTS) VALUES (%s, %s)"
+        values = (data['ID'], data['POINTS'])
+        
+        try:
+            cursor.execute(query, values)
+            conn.commit()
+            return Response("Object added", status=201, mimetype='application/json')
+        except mysql.connector.Error as err:
+            print("Something went wrong: {}".format(err))
+            return Response("Failed to add type", status=500, mimetype='application/json')
+        finally:
+            cursor.close()
+            conn.close()
+
+    # PATCH /points/object/<object_id> - Retify number of points of an object
+    def patch(self, object_id):
+        data = request.get_json()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "UPDATE OBJECTS SET POINTS = %s WHERE ID = %s"
+        values = (data['POINTS'], object_id)
+        
+        try:
+            cursor.execute(query, values)
+            conn.commit()
+            return Response("Object updated", status=200, mimetype='application/json')
+        except mysql.connector.Error as err:
+            print("Something went wrong: {}".format(err))
+            return Response("Failed to update object", status=500, mimetype='application/json')
+        finally:
+            cursor.close()
+            conn.close()
+
+#class History:
+# GET /points/entity/<entity_id>/history - History of points transactions   HALF DONE (NEEDS OBJECT ID)
+
+# se em entity points a coluna done = true -> update history
+# nesse update:
+# object na tabela history = object na tabela entityObjects object where done = true
+# entity na tabela history = entity na tabela entityObjects where done = true
+# action = entityId points - or + object points
+# or (se os pontos foram por um evento)
+# action = entityId points - or + type points & object = null
+
+
+
+
 
 
 
 # api.add_resource(Entity, '/entity')
 api.add_resource(Entity, '/v1/entity', endpoint='all_entities')  
-api.add_resource(Entity, '/v1/entity/<entity_id>', endpoint='specific_entity')  
-api.add_resource(EntityHistory, '/v1/entity/<entity_id>/history', endpoint='entity_history')
+api.add_resource(Entity, '/v1/entity/<int:entity_id>', endpoint='specific_entity')  
 api.add_resource(Type, '/v1/type')
-api.add_resource(Standings, '/v1/standings', endpoint='standings')
-api.add_resource(Standings, '/v1/standings/<points_type>', endpoint='standings_type')  
+api.add_resource(Standings, '/v1/standings')
 
 
 # SWAGGER CONF
@@ -245,16 +314,27 @@ if __name__ == '__main__':
 
 
 # TODO
-# trigger para atualizar a tabela ENTITYPOINTS com o ID quando um novo TIPO ou ENTITY são adicionados DONE
-# função que soma os pontos/tira os pontos         DONE
-# PATCH /points/entity/<entity_id> - Add or remove points to an entity      NOT DONE (GET AND POST ENTITIES ARE DONE) 
-# GET /points/entity/<entity_id>/history - History of points transactions   HALF DONE (NEEDS OBJECT ID)
-# POST /points/type - Add a new points type        DONE
-# DELETE /points/type - Remove type of points      DONE
-# GET /points/standings - Get general standings of all entities  DONE
-# GET /points/standings?type=<points_type> - Get standings of a points type  DONE (??) /standidngs/type query
-# versão api
+
+
+# TRIGGER que se na tabela entityobjects a tabela done estiver a true então adiciona o número de pontos correspondentes a esse object ID ao entity ID
+# se estiver false o número de pontos mantém-se 
+
+# TRIGGERS
+# se em ENTITY POINTS a tabela DONE estiver true, então adiciona o número de pontos correspondente a esse OBJECT ID ao ENTITY ID e atualiza o HISTORY com 
+# a ACTION que foi feita (adicionou ou removeu pontos) e o esse OBJECT ID associado a essa action
+    
+
 # NOT FORGET
 # object -> evento
 # entity -> pessoa
 # type -> nucleo
+    
+# ENTITY -> pontos por cada pessoa
+# OBJECT -> pontos por cada evento
+# TYPE -> pontos recebidos por quem?
+# ENTITYPOINTS -> «recebe x pontos do NEECT»
+# HISTORY -> histórico de transações de pontos
+# ENTITYOBJECTS -> «recebe x pontos por ter feito y evento»
+    
+# HISTORY
+# ENTITY_ID recebeu/ficou sem x pontos por ter feito OBJECT_ID em TIMESTAMP
