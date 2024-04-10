@@ -11,7 +11,7 @@
   "consumes": ["application/json"],
   "produces": ["application/json"],
   "paths": {
-    "/entity?id=<entity_id>": {
+    "/v1/entity?id=<entity_id>": {
       "get": {
         "summary": "Returns all entities or a specific entity by ID.",
         "responses": {
@@ -39,7 +39,7 @@
         }
       }
     },
-    "/entity/{entity_id}?object=<object_id>": {
+    "/v1/entity/{entity_id}?object=<object_id>": {
       "patch": {
         "summary": "Updates points of an entity associated (or not) to an object.",
         "parameters": [
@@ -80,7 +80,7 @@
         }
       }
     },
-    "/entity/{entity_id}/object": {
+    "/v1/entity/{entity_id}/object": {
       "post": {
         "summary": "Associates an object to an entity.",
         "parameters": [
@@ -116,7 +116,7 @@
         }
       }
     },
-    "/entity/{entity_id}/history": {
+    "/v1/entity/{entity_id}/history": {
       "get": {
         "summary": "Returns all points transactions for a specific entity.",
         "parameters": [
@@ -152,7 +152,7 @@
         }
       }
     },
-    "/standings?type=<points_type>": {
+    "/v1/standings?type=<points_type>": {
       "get": {
         "summary": "Gets general standings of all entities or standings by type.",
         "responses": {
@@ -162,7 +162,7 @@
         }
       }
     },
-    "/object": {
+    "/v1/object": {
       "post": {
         "summary": "Creates a new object with points.",
         "responses": {
