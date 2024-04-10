@@ -71,57 +71,34 @@ class Entity(Resource):
             cursor.close()
             conn.close()
 
-    def patch(self, entity_id):
-        data = request.get_json(force=True)  
-        if 'points' not in data:
-            return {'message': 'Points value is required'}, 400  
-        points_to_update = data['points']
+    # def patch(self, entity_id):
+    #     data = request.get_json(force=True)  
+    #     if 'points' not in data:
+    #         return {'message': 'Points value is required'}, 400  
+    #     points_to_update = data['points']
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
+    #     conn = get_db_connection()
+    #     cursor = conn.cursor()
 
-        query = "UPDATE ENTITY SET POINTS = POINTS + %s WHERE ID = %s"
-        values = (points_to_update, entity_id)
+    #     query = "UPDATE ENTITY SET POINTS = POINTS + %s WHERE ID = %s"
+    #     values = (points_to_update, entity_id)
 
-        try:
-            cursor.execute(query, values)
-            conn.commit()
-            if cursor.rowcount == 0:
-                return {'message': 'Entity not found'}, 404 
-            return {'message': 'Entity updated successfully'}, 200
-        except mysql.connector.Error as err:
-            return {'error': str(err)}, 500
-        finally:
-            cursor.close()
-            conn.close()
-
-
-
-    # PATCH /points/entity/<entity_id>/?object_id=<object_id> 
-    # na altura de adicionar ou remover pontos -> identificar o object_id
-    # se não for identificado, então os pontos são porque sim
-
-
-    # se houver object id -> update table set done = TRUE
-    # trigger que se em entity objetc o done = TRUE -> object id pontos soma ao entity ID
-    # update history e update entity id
-
-    # se não houver object id -> update da tabela entity com esse valor 
-
-
-    # para o history
-    # se adicionar pontos a uma entity só porque sim: object = null actions: old points + new points
-    # se adicionar pontos e o object não for null: action: entity id old points + object id points 
-
-
+    #     try:
+    #         cursor.execute(query, values)
+    #         conn.commit()
+    #         if cursor.rowcount == 0:
+    #             return {'message': 'Entity not found'}, 404 
+    #         return {'message': 'Entity updated successfully'}, 200
+    #     except mysql.connector.Error as err:
+    #         return {'error': str(err)}, 500
+    #     finally:
+    #         cursor.close()
+    #         conn.close()
 
 
 class EntityObjects(Resource):
 
-    #POST /points/entity/<entity_id>/object - Associate an object to an entity
-
-    # by searching for that entity id, we can see what objects are associated
-    # «a pessoa de id <entity_id> fez o evento de id object
+    # POST /points/entity/<entity_id>/object - Associate an object to an entity
     def post(self, entity_id):
         data = request.get_json()
         conn = get_db_connection()
@@ -243,12 +220,12 @@ class Standings(Resource):
     # GET /points/standings?type=<points_type> - Get standings of a points type
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('type', type=int, store_missing=False, location='args')  # Using 'points_type' for external clarity
+        parser.add_argument('type', type=int, store_missing=False, location='args') 
         args = parser.parse_args()
         points_type = args.get('type')
 
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)  # Use dictionary=True for more accessible result handling
+        cursor = conn.cursor(dictionary=True)  
 
         try:
             if points_type is not None:
@@ -310,30 +287,34 @@ class Object(Resource):
             cursor.close()
             conn.close()
 
-#class History:
-# GET /points/entity/<entity_id>/history - History of points transactions   HALF DONE (NEEDS OBJECT ID)
+class History(Resource):
 
-# se em entity points a coluna done = true -> update history
-# nesse update:
-# object na tabela history = object na tabela entityObjects object where done = true
-# entity na tabela history = entity na tabela entityObjects where done = true
-# action = entityId points - or + object points
-# or (se os pontos foram por um evento)
-# action = entityId points - or + type points & object = null
+    # GET /points/entity/<entity_id>/history - History of points transactions   HALF DONE (NEEDS OBJECT ID)
+    def get(self, entity_id):
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
+        try:
+            
+            query = "SELECT * FROM HISTORY WHERE ENTITY_ID = %s"
+            cursor.execute(query, (entity_id,))
 
-
-
-
+            result = cursor.fetchall()
+            return jsonify(result)
+        except Error as err:
+            return {"error": str(err)}, 500
+        finally:
+            cursor.close()
+            conn.close()
 
 
 api.add_resource(Entity, '/v1/entity', endpoint='all_entities')  
-api.add_resource(Entity, '/v1/entity/<int:entity_id>', endpoint='specific_entity')  
+api.add_resource(EntityObjects, '/v1/entity/<int:entity_id>/object', endpoint='associate_object')
+api.add_resource(EntityObjects, '/v1/entity/<int:entity_id>', endpoint='update_points')
 api.add_resource(Type, '/v1/type')
 api.add_resource(Standings, '/v1/standings')
 api.add_resource(Object, '/v1/object')
-api.add_resource(EntityObjects, '/v1/entity/<int:entity_id>/object', endpoint='associate_object')
-api.add_resource(EntityObjects, '/v1/entity/<int:entity_id>', endpoint='update_points')
+api.add_resource(History, '/v1/entity/<int:entity_id>/history')
 
 
 
@@ -363,15 +344,6 @@ if __name__ == '__main__':
 
 # TODO
 
-
-# TRIGGER que se na tabela entityobjects a tabela done estiver a true então adiciona o número de pontos correspondentes a esse object ID ao entity ID
-# se estiver false o número de pontos mantém-se 
-
-# TRIGGERS
-# se em ENTITY POINTS a tabela DONE estiver true, então adiciona o número de pontos correspondente a esse OBJECT ID ao ENTITY ID e atualiza o HISTORY com 
-# a ACTION que foi feita (adicionou ou removeu pontos) e o esse OBJECT ID associado a essa action
-    
-
 # NOT FORGET
 # object -> evento
 # entity -> pessoa
@@ -384,32 +356,6 @@ if __name__ == '__main__':
 # HISTORY -> histórico de transações de pontos
 # ENTITYOBJECTS -> «recebe x pontos por ter feito y evento»
     
-# HISTORY
-# ENTITY_ID recebeu/ficou sem x pontos por ter feito OBJECT_ID em TIMESTAMP
-
-
-
-# class EntityPoints(Resource):
-#     def post(self, entity_id):
-#         data = request.get_json()
-#         conn = get_db_connection()
-#         cursor = conn.cursor()
-        
-#         query = "INSERT INTO ENTITYPOINTS (ENTITY_ID, _ID, DONE) VALUES (%s, %s, %s)"
-#         values = (entity_id, data['OBJECT_ID'], data['DONE'])
-        
-#         try:
-#             cursor.execute(query, values)
-#             conn.commit()
-#             return Response("Object associated to entity", status=201, mimetype='application/json')
-#         except mysql.connector.Error as err:
-#             print("Something went wrong: {}".format(err))
-#             return Response("Failed to associate object to entity", status=500, mimetype='application/json')
-#         finally:
-#             cursor.close()
-#             conn.close()
-
-
 
 
 

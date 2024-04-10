@@ -1,194 +1,308 @@
 {
-    "swagger": "2.0",
-    "info": {
-      "title": "POINTS SYSTEM API",
-      "description": "A API that helps manage a points system.",
-      "version": "v0"
+  "swagger": "2.0",
+  "info": {
+    "title": "POINTS SYSTEM API",
+    "description": "API for managing a points system.",
+    "version": "1.0"
+  },
+  "host": "localhost:5000",
+  "basePath": "/v1",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "paths": {
+    "/entity?id=<entity_id>": {
+      "get": {
+        "summary": "Returns all entities or a specific entity by ID.",
+        "responses": {
+          "200": {
+            "description": "An array of entities."
+          }
+        }
+      },
+      "post": {
+        "summary": "Adds a new entity with points.",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/NewEntity"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Entity added."
+          }
+        }
+      }
     },
-    "basePath": "/api",
-    "schemes": [
-      "http"
-    ],
-    "consumes": [
-      "application/json"
-    ],
-    "produces": [
-      "application/json"
-    ],
-    "paths": {
-      "/entity": {
-        "get": {
-          "summary": "Returns all entities available in database.",
-          "produces": [
-            "application/json"
-          ],
-          "responses": {
-            "200": {
-              "description": "Successful response.",
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "entity_id": {
-                        "type": "string",
-                        "description": "ID of the entity."
-                      },
-                      "points": {
-                        "type": "integer",
-                        "description": "The points associated with the entity."
-                      }
-                    }
-                  }
+    "/entity/{entity_id}?object=<object_id>": {
+      "patch": {
+        "summary": "Updates points of an entity associated (or not) to an object.",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "object",
+            "in": "query",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "points": {
+                  "type": "integer",
+                  "description": "Points to update."
                 }
+              },
+              "required": ["points"]
             }
           }
-        },
-        "post": {
-          "summary": "Adds new entities and points.",
-          "produces": [
-            "application/json"
-          ],
-          "responses": {
-            "200": {
-              "description": "Successful response.",
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "entity_id": {
-                        "type": "string",
-                        "description": "ID of the entity."
-                      },
-                      "points": {
-                        "type": "integer",
-                        "description": "The points associated with the entity."
-                      }
-                    }
-                  }
+        ],
+        "responses": {
+          "200": {
+            "description": "Update successful."
+          },
+          "404": {
+            "description": "No rows updated."
+          }
+        }
+      }
+    },
+    "/entity/{entity_id}/object": {
+      "post": {
+        "summary": "Associates an object to an entity.",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "OBJECT_ID": {
+                  "type": "integer",
+                  "description": "ID of the object to associate."
+                },
+                "DONE": {
+                  "type": "boolean",
+                  "description": "Mark object as done."
                 }
+              },
+              "required": ["OBJECT_ID", "DONE"]
             }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Object associated to entity."
+          }
+        }
+      }
+    },
+    "/entity/{entity_id}/history": {
+      "get": {
+        "summary": "Returns all points transactions for a specific entity.",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "History of transactions."
+          }
+        }
+      }
+    },
+    "/type": {
+      "post": {
+        "summary": "Adds a new points type.",
+        "responses": {
+          "201": {
+            "description": "Type added."
           }
         }
       },
-      "/v1/entity/<entity_id>": {
-        "get": {
-          "summary": "Returns all entries of that entity.",
-          "produces": [
-            "application/json"
-          ],
-          "responses": {
-            "200": {
-              "description": "Successful response.",
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "entity_id": {
-                        "type": "string",
-                        "description": "ID of the entity."
-                      },
-                      "points": {
-                        "type": "integer",
-                        "description": "The points associated with the entity."
-                      }
-                    }
-                  }
-                }
-            }
+      "delete": {
+        "summary": "Removes a points type.",
+        "responses": {
+          "200": {
+            "description": "Type removed."
+          }
+        }
+      }
+    },
+    "/standings?type=<points_type>": {
+      "get": {
+        "summary": "Gets general standings of all entities or standings by type.",
+        "responses": {
+          "200": {
+            "description": "Standings retrieved."
+          }
+        }
+      }
+    },
+    "/object": {
+      "post": {
+        "summary": "Creates a new object with points.",
+        "responses": {
+          "201": {
+            "description": "Object added."
           }
         }
       },
-      "/v1/entity/<entity_id>/history": {
-        "get": {
-          "summary": "Returns all points transactions per entity.",
-          "produces": [
-            "application/json"
-          ],
-          "responses": {
-            "200": {
-              "description": "Successful response.",
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "ACTION": {
-                        "type": "integer",
-                        "description": "The action that was performed, if points were added or removed."
-                      },
-                      "ENTITY_ID": {
-                        "type": "varchar",
-                        "description": "The entity in which the action was performed."
-                      },
-                      "timestamp": {
-                        "type": "timestamp",
-                        "description": "Action in real time."
-                      }
-                    }
-                  }
+      "patch": {
+        "summary": "Updates points of an object.",
+        "parameters": [
+          {
+            "name": "object_id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "properties": {
+                "POINTS": {
+                  "type": "integer",
+                  "description": "New points value for the object."
                 }
+              },
+              "required": ["POINTS"]
             }
           }
-        }
-      },
-      "/type": {
-        "post": {
-          "summary": "Adds a new type of points",
-          "produces": [
-            "application/json"
-          ],
-          "responses": {
-            "200": {
-              "description": "Successful response.",
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "ACTION": {
-                        "type": "varchar",
-                        "description": "The action that was performed, if points were added or removed."
-                      },
-                      "ENTITY_ID": {
-                        "type": "varchar",
-                        "description": "The entity in which the action was performed."
-                      }
-                    }
-                  }
-                }
-            }
-          }
-        },
-        "delete": {
-          "summary": "Deletes a type of points",
-          "produces": [
-            "application/json"
-          ],
-          "responses": {
-            "200": {
-              "description": "Successful response.",
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "ID": {
-                        "type": "varchar",
-                        "description": "The ID of the type."
-                      },
-                      "TIPO": {
-                        "type": "varchar",
-                        "description": "The type it self"
-                      }
-                    }
-                  }
-                }
-            }
+        ],
+        "responses": {
+          "200": {
+            "description": "Object updated."
           }
         }
       }
     }
+  },
+  "definitions": {
+    "ENTITY": {
+      "type": "object",
+      "required": ["ID", "POINTS"],
+      "properties": {
+        "ID": {
+          "type": "string",
+          "description": "ID of the entity."
+        },
+        "POINTS": {
+          "type": "integer",
+          "description": "Initial points for the entity."
+        }
+      }
+    },
+    "OBJECT": {
+      "type": "object",
+      "required": ["ID", "POINTS"],
+      "properties": {
+        "ID": {
+          "type": "string",
+          "description": "ID of the object, same as an event."
+        },
+        "POINTS": {
+          "type": "integer",
+          "description": "Initial points for the object."
+        }
+      }
+    },
+    "TYPE": {
+      "type": "object",
+      "required": ["ID", "POINTS"],
+      "properties": {
+        "ID": {
+          "type": "string",
+          "description": "ID of the type."
+        },
+        "POINTS": {
+          "type": "integer",
+          "description": "Points assigned per type."
+        }
+      }
+    },
+    "ENTITYOBJECTS": {
+      "type": "object",
+      "required": ["ENTITY_ID", "OBJECT_ID", "DONE"],
+      "properties": {
+        "ENTITY_ID": {
+          "type": "string",
+          "description": "ID of the entity."
+        },
+        "OBJECT_ID": {
+          "type": "string",
+          "description": "ID of the object associated to that entity."
+        },
+        "DONE": {
+          "type": "boolean",
+          "description": "Marks the object as completed or not."
+        }
+      }
+    },
+    "ENTITYPOINTS": {
+      "type": "object",
+      "required": ["ENTITY_ID", "TYPE_ID", "POINTS"],
+      "properties": {
+        "ENTITY_ID": {
+          "type": "string",
+          "description": "ID of the entity."
+        },
+        "TYPE_ID": {
+          "type": "string",
+          "description": "ID of the type the entity received points."
+        },
+        "POINTS": {
+          "type": "integer",
+          "description": "Points of that entity for that type."
+        }
+      }
+    },
+    "HISTORY": {
+      "type": "object",
+      "required": ["ENTITY_ID", "OBJECT_ID", "ACTION", "TIMESTAMP"],
+      "properties": {
+        "ENTITY_ID": {
+          "type": "string",
+          "description": "ID of the entity."
+        },
+        "OBJECT_ID": {
+          "type": "string",
+          "description": "ID of the object associated to that entity, can be null."
+        },
+        "ACTION": {
+          "type": "integer",
+          "description": "Amount of points given or taken"
+        },
+        "TIMESTAMP": {
+          "type": "timestamp",
+          "description": "Time of the transaction."
+        }
+      }
+    }
   }
+}
