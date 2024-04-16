@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, Response
 from flask_restful import Resource, Api, reqparse
 from flask_swagger_ui import get_swaggerui_blueprint
-from models import ENTITY, OBJECT, ENTITYOBJECTS, HISTORY, TYPE, ENTITYPOINTS
+from models import ENTITY, OBJECT, ENTITYOBJECTS, HISTORY, TYPE, ENTITYPOINTS, APIKEYS
 from datetime import datetime
 from db_config import * 
 import mysql.connector
@@ -13,6 +13,7 @@ api = Api(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = get_db()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = get_sqlalchemy_track_modifications()
+
 db.init_app(app)
 
 def get_db_connection():
@@ -24,20 +25,51 @@ def get_db_connection():
         return None
 
 
+class APIkey(Resource):
+
+    def get(self):
+        try:
+            apikeys = APIKEYS.query.all()  
+            if not apikeys:  
+                return jsonify([])  
+
+            return jsonify([{'ID': apikey.ID} for apikey in apikeys])
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+
+
 class Entity(Resource):
 
-    def get(self, entity_id=None):
-        if entity_id:
-            entity = ENTITY.query.filter_by(ID=entity_id).first()
-            if entity:
-                response = json.dumps(entity.to_dict()) 
-                return Response(response, mimetype='application/json')
-            return Response(json.dumps({'message': 'Entity not found'}), status=404, mimetype='application/json')
-        else:
-            entities = ENTITY.query.all()
-            response = json.dumps([entity.to_dict() for entity in entities])  # Serialize each entity manually
-            return Response(response, mimetype='application/json')
+    # GET /points/entity - Get all entities
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('id', type=int, store_missing=False, location='args') 
+        args = parser.parse_args()
+        id = args.get('id')
 
+        try:
+            if id is not None:
+                entities = ENTITY.query.filter_by(ID=id).first()
+                if entities is None:
+                    return jsonify([]) 
+                entities = [entities]
+            else:
+                entities = ENTITY.query.all()
+                if entities is None:
+                    return jsonify([])  
+
+            return jsonify([{
+                'ID': entity.ID,
+                'POINTS': entity.POINTS,
+            } for entity in entities])
+
+        except Exception as e:
+            # Handle errors that occur during database interaction
+            return {"error": str(e)}, 500
+
+    # POST /points/entity - Add a new entity
     def post(self):
         data = request.get_json()
         new_entity = ENTITY(id=data['ID'], points=data['POINTS'])
@@ -140,8 +172,8 @@ class Type(Resource):
     # DELETE /points/type - Remove a points type
     def delete(self):
         data = request.get_json()
-        type_id = data['ID']
-        type_to_delete = TYPE.query.filter_by(ID=type_id).first()
+        tipo_id = data['ID']
+        type_to_delete = TYPE.query.filter_by(ID=tipo_id).first()
 
         if type_to_delete is None:
             return {'message': 'Type not found'}, 404
@@ -169,14 +201,14 @@ class Standings(Resource):
         try:
             if points_type is not None:
                 # Querying standings for a specific points type
-                standings = ENTITYPOINTS.query.filter_by(TYPE_ID=points_type).order_by(ENTITYPOINTS.POINTS.desc()).all()
+                standings = ENTITYPOINTS.query.filter_by(TIPO_ID=points_type).order_by(ENTITYPOINTS.POINTS.desc()).all()
             else:
                 # Querying general standings
                 standings = ENTITYPOINTS.query.order_by(ENTITYPOINTS.POINTS.desc()).all()
 
             return jsonify([{
                 'ENTITY_ID': standing.ENTITY_ID,
-                'TYPE_ID': standing.TYPE_ID,
+                'TIPO_ID': standing.TIPO_ID,
                 'POINTS': standing.POINTS
             } for standing in standings])
 

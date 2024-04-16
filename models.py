@@ -3,6 +3,21 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from db_config import db
 
+
+class APIKEYS(db.Model):
+    
+        __tablename__ = 'APIKEYS'
+        ID = db.Column(db.String(100), primary_key=True)
+        
+        def __init__(self, id):
+            self.ID = id
+        
+        def to_dict(self):
+            return {
+                "ID": self.ID
+            }
+        
+
 # create table ENTITY
 class ENTITY(db.Model):
 
@@ -86,19 +101,19 @@ class ENTITYPOINTS(db.Model):
 
     __tablename__ = 'ENTITYPOINTS'
     ENTITY_ID = db.Column(db.String(100), db.ForeignKey('ENTITY.ID'), primary_key=True)
-    TYPE_ID = db.Column(db.String(100), db.ForeignKey('TYPE.ID'), primary_key=True)
+    TIPO_ID = db.Column(db.String(100), db.ForeignKey('TYPE.ID'), primary_key=True)
     POINTS = db.Column(db.Integer)
         
-    def __init__(self, entity_id, type_id, points):
+    def __init__(self, entity_id, tipo_id, points):
         self.ENTITY_ID = entity_id,
-        self.TYPE_ID = type_id,
+        self.TIPO_ID = tipo_id,
         self.POINTS = points
 
     
     def to_dict(self):
         return {
             "ENTITY_ID": self.entity_id,
-            "TYPE_ID": self.type_id,
+            "TIPO_ID": self.tipo_id,
             "POINTS": self.points
     }
 

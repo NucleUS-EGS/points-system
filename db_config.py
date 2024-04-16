@@ -17,7 +17,7 @@ def get_sqlalchemy_track_modifications():
 #         'user': os.environ.get("USER_NAME"),
 #         'password': os.environ.get("PASSWORD"),
 #         'database': os.environ.get('DATABASE')
-#     }
+#}
 
 db_config = {
     'host': os.environ.get("HOST"),
