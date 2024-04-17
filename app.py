@@ -1,9 +1,11 @@
 from flask import Flask, jsonify, request, Response
 from flask_restful import Resource, Api, reqparse
 from flask_swagger_ui import get_swaggerui_blueprint
-from models import ENTITY, OBJECT, ENTITYOBJECTS, HISTORY, TYPE, ENTITYPOINTS, APIKEYS
+from sqlalchemy import create_engine
+from sqlalchemy.engine import reflection
 from datetime import datetime
 from db_config import * 
+from models import * 
 import mysql.connector
 from mysql.connector import Error
 import json
@@ -16,6 +18,24 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = get_sqlalchemy_track_modification
 
 db.init_app(app)
 
+APIKEY = os.environ.get('APIKEY')
+
+with app.app_context():
+    engine = create_engine(get_db())
+    insp = reflection.Inspector.from_engine(engine)
+    if not insp.has_table(APIKEYS.__tablename__):
+        print(' * Creating all tables')
+        db.create_all()
+
+        # insert APIKEY if doesn't exist
+        key = APIKEYS.query.get(APIKEY)
+        if not key:
+            print(' * Adding API Key')
+            key = APIKEYS(APIKEY)
+            db.session.add(key)
+            db.session.commit()
+
+
 def get_db_connection():
     try:
         conn = mysql.connector.connect(**db_config)
@@ -23,7 +43,6 @@ def get_db_connection():
     except Error as e:
         print(f"Error connecting to MySQL: {e}")
         return None
-
 
 class APIkey(Resource):
 
@@ -302,7 +321,6 @@ def swagger():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
 
 
 # TODO

@@ -1,8 +1,5 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from db_config import db
-
 
 class APIKEYS(db.Model):
     

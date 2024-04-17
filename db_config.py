@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 load_dotenv()
 
 def get_db():
-    return f"mysql://{os.environ.get('USER_NAME')}:{os.environ.get('PASSWORD')}@{os.environ.get('HOST')}/{os.environ.get('DATABASE')}"
+    return f"mysql+pymysql://{os.environ.get('USER_NAME')}:{os.environ.get('PASSWORD')}@{os.environ.get('HOST')}:{os.environ.get('PORT')}/{os.environ.get('DATABASE')}"
 
 def get_sqlalchemy_track_modifications():
     return False 
