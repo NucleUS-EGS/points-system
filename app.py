@@ -100,6 +100,21 @@ class Entity(Resource):
 
 class EntityObjects(Resource):
 
+    def get(self, entity_id):
+        try:
+            entity_objects = ENTITYOBJECTS.query.filter_by(ENTITY_ID=entity_id).all()
+            if not entity_objects:
+                return jsonify([])
+
+            return jsonify([{
+                'ENTITY_ID': entity_object.ENTITY_ID,
+                'OBJECT_ID': entity_object.OBJECT_ID,
+                'DONE': entity_object.DONE
+            } for entity_object in entity_objects])
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+        
     # POST /points/entity/<entity_id>/object - Associate an object to an entity
     def post(self, entity_id):
         data = request.get_json()
@@ -110,15 +125,10 @@ class EntityObjects(Resource):
             DONE=data['DONE']
         )
         
-        try:
-            db.session.add(new_entity_object)
-            db.session.commit()
-            return Response("Object associated to entity", status=201, mimetype='application/json')
-        except Exception as e:
-            db.session.rollback()
-            print("Something went wrong: {}".format(e))
-            return Response("Failed to associate object to entity", status=500, mimetype='application/json')
-
+        db.session.add(new_entity_object)
+        db.session.commit()
+        return Response("Object associated to entity", status=201, mimetype='application/json')
+  
     # PATCH /points/entity/<entity_id>?object_id=<object_id> - Update points of an entity
     def patch(self, entity_id):
         parser = reqparse.RequestParser()
@@ -174,25 +184,31 @@ class EntityObjects(Resource):
 
 class Type(Resource):
 
+
+    def get(self):
+        try:
+            types = TYPE.query.all()  
+            if not types:  
+                return jsonify([])  
+
+            return jsonify([{'ID': tipo.ID, 'POINTS': tipo.POINTS} for tipo in types])
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+        
     # POST /points/type - Add a new points type
     def post(self):
         data = request.get_json()
-        new_type = TYPE(ID=data['ID'], POINTS=data['TIPO'])
-
-        try:
-            db.session.add(new_type)
-            db.session.commit()
-            return Response("Type added", status=201, mimetype='application/json')
-        except Exception as e:
-            db.session.rollback()
-            print("Something went wrong: {}".format(e))
-            return Response("Failed to add type", status=500, mimetype='application/json')
+        new_type = TYPE(id=data['ID'], points=data['POINTS'])
+        db.session.add(new_type)
+        db.session.commit()
+        return Response("Type added", status=201, mimetype='application/json')
 
     # DELETE /points/type - Remove a points type
-    def delete(self):
+    def delete(self, type_id):
         data = request.get_json()
-        tipo_id = data['ID']
-        type_to_delete = TYPE.query.filter_by(ID=tipo_id).first()
+        tipo_id = type_id
+        type_to_delete = TYPE.query.filter_by(type_id).first()
 
         if type_to_delete is None:
             return {'message': 'Type not found'}, 404
@@ -288,13 +304,29 @@ class History(Resource):
             return jsonify(result)
         except Exception as e:
             return {"error": str(e)}, 500
+        
+class EntityPoints(Resource):
 
+    def post(self):
+        data = request.get_json()
+    
+        new_entitypoints = ENTITYPOINTS(
+            entity_id=data['ENTITY_ID'],
+            tipo_id=data['TIPO_ID'],
+            points=data['POINTS']
+        )
+            
+        db.session.add(new_entitypoints)
+        db.session.commit()
+        return Response("Entity points added", status=201, mimetype='application/json')
+     
 
 api.add_resource(Entity, '/v1/entity', endpoint='all_entities')  
 api.add_resource(EntityObjects, '/v1/entity/<int:entity_id>/object', endpoint='associate_object')
 api.add_resource(EntityObjects, '/v1/entity/<int:entity_id>', endpoint='update_points')
 api.add_resource(Type, '/v1/type')
 api.add_resource(Standings, '/v1/standings')
+api.add_resource(EntityPoints, '/v1/entitypoints')
 api.add_resource(Object, '/v1/object')
 api.add_resource(History, '/v1/entity/<int:entity_id>/history')
 

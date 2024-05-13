@@ -49,8 +49,6 @@ class TYPE(db.Model):
             "POINTS": self.POINTS
     }
 
-    def __repr__(self):
-        return '<Type %r has points %r>' % self.ID, self.POINTS
     
 # create table OBJECTS
 class OBJECT(db.Model):
@@ -91,9 +89,6 @@ class ENTITYOBJECTS(db.Model):
             "DONE": self.DONE
     }
 
-    def __repr__(self):
-        return '<User %r>' % self.username
-    
 class ENTITYPOINTS(db.Model):
 
     __tablename__ = 'ENTITYPOINTS'
