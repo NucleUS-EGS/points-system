@@ -9,6 +9,7 @@ from models import *
 import mysql.connector
 from mysql.connector import Error
 import json
+from waitress import serve
 
 app = Flask(__name__)
 api = Api(app)
@@ -330,12 +331,13 @@ api.add_resource(EntityPoints, '/v1/entitypoints')
 api.add_resource(Object, '/v1/object')
 api.add_resource(History, '/v1/entity/<int:entity_id>/history')
 
-
+HOST = os.environ.get('APP_HOST')
+PORT = os.environ.get('APP_PORT')
 
 # SWAGGER CONF
 
-SWAGGER_URL = '/swagger/v1'
-API_URL = 'http://' + os.environ.get('FLASK_RUN_HOST') + ':' + os.environ.get('FLASK_RUN_PORT') + '/swagger.json'
+SWAGGER_URL = '/swagger/v1/'
+API_URL = 'http://' + HOST + ':' + PORT + '/swagger.json'
 swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,
     API_URL,
@@ -352,7 +354,7 @@ def swagger():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    serve(app, host=HOST, port=PORT)
 
 
 # TODO
