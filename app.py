@@ -354,7 +354,8 @@ def swagger():
 
 
 if __name__ == '__main__':
-    serve(app, host=HOST, port=PORT)
+    # serve(app, host=HOST, port=PORT)
+    app.run(debug=True)
 
 
 # TODO
