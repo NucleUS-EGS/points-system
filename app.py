@@ -334,27 +334,27 @@ api.add_resource(History, '/v1/entity/<int:entity_id>/history')
 HOST = os.environ.get('APP_HOST')
 PORT = os.environ.get('APP_PORT')
 
-# SWAGGER CONF
+# # SWAGGER CONF
 
-SWAGGER_URL = '/swagger/v1/'
-API_URL = 'http://' + HOST + ':' + PORT + '/swagger.json'
-swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
-    config={
-        'app_name': "POINTS SYSTEM"
-    }
-)
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+# SWAGGER_URL = '/swagger/v1/'
+# API_URL = 'http://' + HOST + ':' + PORT + '/swagger.json'
+# swaggerui_blueprint = get_swaggerui_blueprint(
+#     SWAGGER_URL,
+#     API_URL,
+#     config={
+#         'app_name': "POINTS SYSTEM"
+#     }
+# )
+# app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
-@app.route('/swagger.json')
-def swagger():
-    with open('swagger.json', 'r') as f:
-        return jsonify(json.load(f))
+# @app.route('/swagger.json')
+# def swagger():
+#     with open('swagger.json', 'r') as f:
+#         return jsonify(json.load(f))
 
 
 if __name__ == '__main__':
-    # serve(app, host=HOST, port=PORT)
+#     # serve(app, host=HOST, port=PORT)
     app.run(debug=True)
 
 
